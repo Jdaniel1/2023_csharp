@@ -1,0 +1,195 @@
+using System;
+using System.Collections;
+using System.Threading;
+
+namespace BitArrayCollection
+{
+    class BitArrayCollection
+    {
+        private BitArray[] collection;
+        private Mutex mutex;
+
+        public BitArrayCollection(int size)
+        {
+            collection = new BitArray[size];
+            mutex = new Mutex();
+        }
+
+        public void Add(BitArray bitArray)
+        {
+            mutex.WaitOne();
+            try
+            {
+                for (int i = 0; i < collection.Length; i++)
+                {
+                    if (collection[i] == null)
+                    {
+                        collection[i] = bitArray;
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                mutex.ReleaseMutex();
+            }
+        }
+
+        public void Remove(BitArray bitArray)
+        {
+            mutex.WaitOne();
+            try
+            {
+                for (int i = 0; i < collection.Length; i++)
+                {
+                    if (collection[i] == bitArray)
+                    {
+                        collection[i] = null;
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                mutex.ReleaseMutex();
+            }
+        }
+
+        public void PrintCollection()
+        {
+            mutex.WaitOne();
+            try
+            {
+                foreach (BitArray bitArray in collection)
+                {
+                    if (bitArray != null)
+                    {
+                        for (int i = 0; i < bitArray.Length; i++)
+                        {
+                            Console.Write(bitArray[i] ? "1" : "0");
+                        }
+                        Console.WriteLine();
+                    }
+                }
+            }
+            finally
+            {
+                mutex.ReleaseMutex();
+            }
+        }
+
+        public int Count()
+        {
+            mutex.WaitOne();
+            try
+            {
+                int count = 0;
+                foreach (BitArray bitArray in collection)
+                {
+                    if (bitArray != null)
+                    {
+                        count++;
+                    }
+                }
+                return count;
+            }
+            finally
+            {
+                mutex.ReleaseMutex();
+            }
+        }
+
+        public bool Contains(BitArray bitArray)
+        {
+            mutex.WaitOne();
+            try
+            {
+                foreach (BitArray item in collection)
+                {
+                    if (item == bitArray)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            finally
+            {
+                mutex.ReleaseMutex();
+            }
+        }
+
+        public BitArray GetLongest()
+        {
+            mutex.WaitOne();
+            try
+            {
+                BitArray longest = null;
+                int maxLength = 0;
+
+                foreach (BitArray bitArray in collection)
+                {
+                    if (bitArray != null && bitArray.Length > maxLength)
+                    {
+                        longest = bitArray;
+                        maxLength = bitArray.Length;
+                    }
+                }
+
+                return longest;
+            }
+            finally
+            {
+                mutex.ReleaseMutex();
+            }
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            BitArrayCollection collection = new BitArrayCollection(5);
+
+            BitArray bitArray1 = new BitArray(new bool[] { true, false, true, false });
+            BitArray bitArray2 = new BitArray(new bool[] { false, true, true });
+            BitArray bitArray3 = new BitArray(new bool[] { true, true });
+            BitArray bitArray4 = new BitArray(new bool[] { false, false, false, false, false });
+            BitArray bitArray5 = new BitArray(new bool[] { true, true });
+            collection.Add(bitArray1);
+            collection.Add(bitArray2);
+            collection.Add(bitArray3);
+            collection.Add(bitArray4);
+            collection.Add(bitArray5);
+
+            Console.WriteLine("Collection Inicializalas:");
+            collection.PrintCollection();
+            Console.WriteLine();
+
+            Console.WriteLine("Az elemek szama a collectionben: " + collection.Count());
+            Console.WriteLine();
+
+            Console.WriteLine("Tartalmaz bitArray3-t a collection? " + collection.Contains(bitArray3));
+            Console.WriteLine();
+
+            Console.WriteLine("A leghosszabb bitArray a collectionon belul:");
+            BitArray longest = collection.GetLongest();
+            for (int i = 0; i < longest.Length; i++)
+            {
+                Console.Write(longest[i] ? "1" : "0");
+            }
+            Console.WriteLine();
+            Console.WriteLine();
+    
+            Console.WriteLine("bitArray2 torlese.");
+            collection.Remove(bitArray2);
+    
+            Console.WriteLine("Frissitett Collection:");
+            collection.PrintCollection();
+            
+            Console.WriteLie("Nagyon sajnalom a kesest");
+    
+            Console.ReadLine();
+        }
+    }
+}
